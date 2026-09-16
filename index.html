@@ -10,7 +10,8 @@
 button,input,select{font:inherit}button{cursor:pointer}.page{width:min(1500px,100%);margin:auto;padding:14px}.toolbar{display:flex;justify-content:space-between;align-items:end;gap:12px;padding:5px 2px 14px}.title{font-size:clamp(22px,2.5vw,32px);font-weight:850;letter-spacing:-.04em}.subtitle{font-size:13px;color:var(--muted);margin-top:3px}.toolbar-actions{display:flex;flex-wrap:wrap;gap:8px}.btn{border:1px solid var(--border);background:rgba(255,255,255,.06);color:#fff;border-radius:10px;padding:9px 12px}.btn:hover{background:rgba(255,255,255,.1)}.btn.primary{background:#fff;color:#080a0d;border-color:#fff;font-weight:750}.btn.danger{color:#ff9696;border-color:rgba(255,104,104,.3)}
 .auth{display:flex;justify-content:flex-end;gap:8px;align-items:center;margin:-5px 2px 11px}.auth-status{font-size:12px;color:var(--muted)}.admin-badge{color:#8dffb0}
 .controls{display:grid;grid-template-columns:minmax(210px,1.5fr) repeat(4,minmax(110px,.7fr));gap:9px;margin-bottom:14px}.control{width:100%;border:1px solid var(--border);background:rgba(10,13,18,.75);color:#fff;border-radius:11px;padding:10px 11px;outline:none}.control:focus{border-color:rgba(255,255,255,.28)}
-.list{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:18px}.card{position:relative;min-width:0;overflow:hidden;border:1px solid var(--border);border-radius:19px;background:linear-gradient(135deg,rgba(255,255,255,.055),transparent 35%),linear-gradient(315deg,rgba(255,255,255,.025),transparent 45%),var(--panel);box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}.card:before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.38;background:linear-gradient(45deg,transparent 0 48%,rgba(255,255,255,.028) 49% 51%,transparent 52%),linear-gradient(-45deg,transparent 0 48%,rgba(255,255,255,.018) 49% 51%,transparent 52%);background-size:74px 74px}.card-inner{position:relative;z-index:1;padding:13px}.name{margin:0;text-align:center;font-size:clamp(17px,1.7vw,23px);line-height:1.05;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rarity{text-align:center;margin-top:5px;font-size:14px;font-weight:750}.rarity.exclusive{color:var(--purple)}.rarity.leaderboard,.rarity.godly{color:#f0f1f4}.image-box{margin:14px auto 16px;width:min(100%,165px);aspect-ratio:1/1;border-radius:14px;overflow:hidden;background:#0b0e13;display:grid;place-items:center}.image-box img{width:100%;height:100%;object-fit:contain;display:block}.image-placeholder{font-size:12px;line-height:1.5;text-align:center;color:#626975}.row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}.row:last-child{border-bottom:0}.value{text-align:right;font-weight:550;white-space:nowrap}.status{font-weight:750}.status.unstable{color:var(--gold)}.status.fluctuating,.status.stable{color:#f0f1f4}.card-actions{display:flex;gap:7px;margin-top:10px}.card-actions .btn{flex:1;padding:8px 7px;font-size:12px}.add-card{min-height:300px;border:1px dashed rgba(255,255,255,.15);border-radius:19px;background:rgba(255,255,255,.018);display:grid;place-items:center;color:var(--muted)}.add-card:hover{background:rgba(255,255,255,.035)}.add-plus{width:44px;height:44px;margin:auto auto 8px;border:1px solid var(--border);border-radius:50%;display:grid;place-items:center;font-size:24px}.empty{grid-column:1/-1;text-align:center;padding:55px 15px;color:var(--muted)}
+.list{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:18px}.card{position:relative;min-width:0;overflow:hidden;border:1px solid var(--border);border-radius:19px;background:linear-gradient(135deg,rgba(255,255,255,.055),transparent 35%),linear-gradient(315deg,rgba(255,255,255,.025),transparent 45%),var(--panel);box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}.card:before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.38;background:linear-gradient(45deg,transparent 0 48%,rgba(255,255,255,.028) 49% 51%,transparent 52%),linear-gradient(-45deg,transparent 0 48%,rgba(255,255,255,.018) 49% 51%,transparent 52%);background-size:74px 74px}.card-inner{position:relative;z-index:1;padding:13px}.name{margin:0;text-align:center;font-size:clamp(17px,1.7vw,23px);line-height:1.05;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rarity{text-align:center;margin-top:5px;font-size:14px;font-weight:750}.rarity.exclusive{color:var(--purple)}.rarity.leaderboard,.rarity.godly{color:#f0f1f4}.image-box{margin:14px auto 16px;width:min(100%,165px);aspect-ratio:1/1;border-radius:14px;overflow:hidden;background:#0b0e13;display:grid;place-items:center}.image-box img{width:100%;height:100%;object-fit:contain;display:block}.image-placeholder{font-size:12px;line-height:1.5;text-align:center;color:#626975}.row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}.row:last-child{border-bottom:0}.value{text-align:right;font-weight:550;white-space:nowrap}.status{font-weight:750}.status.unstable{color:var(--gold)}.status.fluctuating,.status.stable{color:#f0f1f4}.card-actions{display:flex;gap:7px;margin-top:10px}.card-actions .btn{flex:1;padding:8px 7px;font-size:12px}.card-actions .btn{min-height:36px;font-weight:800}.card-actions .btn[data-edit]{background:linear-gradient(135deg,#fff,#fff4fa);color:#b63b7b}.card-actions .btn.danger{background:rgba(255,245,248,.9);color:#cf4569}.admin-only-note{font-size:12px;color:#a86484;margin-top:5px}.card.admin-card{outline:1px solid rgba(215,83,143,.08)}
+.add-card{min-height:300px;border:1px dashed rgba(255,255,255,.15);border-radius:19px;background:rgba(255,255,255,.018);display:grid;place-items:center;color:var(--muted)}.add-card:hover{background:rgba(255,255,255,.035)}.add-plus{width:44px;height:44px;margin:auto auto 8px;border:1px solid var(--border);border-radius:50%;display:grid;place-items:center;font-size:24px}.empty{grid-column:1/-1;text-align:center;padding:55px 15px;color:var(--muted)}
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(7px);display:none;align-items:center;justify-content:center;padding:15px;z-index:20}.modal-backdrop.open{display:flex}.modal{width:min(580px,100%);max-height:90vh;overflow:auto;border:1px solid var(--border);border-radius:18px;background:#0e1117;box-shadow:0 30px 80px rgba(0,0,0,.55);padding:18px}.modal h2{margin:0 0 4px;font-size:22px}.modal p{margin:0 0 16px;color:var(--muted);font-size:13px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}.field label{font-size:12px;color:#c6cad1}.field input,.field select{width:100%;border:1px solid var(--border);background:#080b10;color:#fff;border-radius:9px;padding:10px;outline:none}.preview{margin-top:12px;border:1px solid var(--border);background:#080b10;border-radius:11px;min-height:130px;display:grid;place-items:center;overflow:hidden}.preview img{max-width:100%;max-height:220px;object-fit:contain;display:block}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:15px}.notice{margin:0 0 14px;padding:10px 12px;border:1px solid rgba(255,255,255,.09);border-radius:10px;color:var(--muted);font-size:12px}.notice.error{border-color:rgba(255,104,104,.3);color:#ffaaaa}.notice.success{border-color:rgba(141,255,176,.3);color:#a7ffc0}.hidden{display:none!important}
 @media(max-width:1180px){.list{grid-template-columns:repeat(4,minmax(0,1fr))}.controls{grid-template-columns:1fr 1fr 1fr}}@media(max-width:900px){.list{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:670px){.page{padding:10px}.toolbar{align-items:flex-start;flex-direction:column}.auth{justify-content:flex-start}.controls{grid-template-columns:1fr 1fr}.list{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card-inner{padding:10px}.image-box{margin:10px auto}.row{font-size:12px}.card-actions{flex-direction:column}}@media(max-width:390px){.controls{grid-template-columns:1fr}.list{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}}
 
@@ -148,6 +149,7 @@ let items = [];
 let editingId = null;
 let selectedImageFile = null;
 let oldImagePath = "";
+let currentUserIsAdmin = false;
 const state = { sort: "default" };
 
 const list = document.getElementById("list");
@@ -176,17 +178,19 @@ function rarityClass(v){return String(v).toLowerCase().replace(/[^a-z0-9]+/g,"-"
 function parseValue(v){const m=String(v).replaceAll(",","").match(/[\d.]+/);return m?Number(m[0]):0}
 function demandText(v){return `${Number(v).toFixed(Number(v)%1===0?0:1)}/10`}
 function isConfigured(){return SUPABASE_URL.startsWith("http") && !SUPABASE_URL.includes("YOUR_") && SUPABASE_PUBLISHABLE_KEY && !SUPABASE_PUBLISHABLE_KEY.includes("YOUR_")}
-function isAdmin(){return !!currentUser && !!currentUser.user_metadata?.is_admin}
+function isAdmin(){return !!currentUser && currentUserIsAdmin}
 function storagePublicUrl(path){return path ? `${SUPABASE_URL}/storage/v1/object/public/value-images/${path}` : ""}
 
 async function checkAdmin(){
-  if(!currentUser || !db)return false;
+  if(!currentUser || !db){ currentUserIsAdmin=false; return false; }
   const {data,error}=await db.from("admin_users").select("user_id").eq("user_id",currentUser.id).maybeSingle();
   if(error){
-    console.error("Admin check failed:",error);
+    console.error("Admin check failed:", error);
+    currentUserIsAdmin=false;
     return false;
   }
-  return !!data;
+  currentUserIsAdmin=!!data;
+  return currentUserIsAdmin;
 }
 
 async function refreshAuth(){
@@ -238,7 +242,7 @@ function render(){
   const admin=isAdmin();
   data.forEach(item=>{
     const image=item.image_path?storagePublicUrl(item.image_path):"";
-    const card=document.createElement("article");card.className="card";
+    const card=document.createElement("article");card.className=admin?"card admin-card":"card";
     card.innerHTML=`
       <div class="card-inner">
         <h2 class="name" title="${esc(item.name)}">${esc(item.name)}</h2>
@@ -328,6 +332,10 @@ async function deleteItem(id){
   if(!confirm(`Delete "${x.name}"?\n\nThis removes the item from the shared Value List for everyone.`))return;
   const {error}=await db.from("value_items").delete().eq("id",id);
   if(error){showNotice("Delete failed: "+error.message,"error");return}
+  if(x.image_path){
+    const {error:storageError}=await db.storage.from("value-images").remove([x.image_path]);
+    if(storageError) console.warn("Old image cleanup failed:", storageError.message);
+  }
   await loadItems();showNotice("Item deleted.","success");
 }
 
@@ -336,7 +344,7 @@ list.addEventListener("click",e=>{
   if(edit)openItemModal(Number(edit.dataset.edit));
   if(del)deleteItem(Number(del.dataset.delete));
 });
-loginBtn.onclick=openLogin;logoutBtn.onclick=async()=>{await db.auth.signOut();showNotice("Logged out.","success");await refreshAuth()};
+loginBtn.onclick=openLogin;logoutBtn.onclick=async()=>{await db.auth.signOut();currentUser=null;currentUserIsAdmin=false;showNotice("Logged out.","success");await refreshAuth()};
 document.getElementById("cancelModal").onclick=closeModal;document.getElementById("cancelItem").onclick=closeModal;
 modalBackdrop.addEventListener("click",e=>{if(e.target===modalBackdrop)closeModal()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});
@@ -358,7 +366,7 @@ async function boot(){
     render();return;
   }
   db=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
-  db.auth.onAuthStateChange(()=>setTimeout(refreshAuth,0));
+  db.auth.onAuthStateChange(()=>setTimeout(async()=>{await refreshAuth(); await loadItems();},0));
   await refreshAuth();await loadItems();
 }
 boot();
