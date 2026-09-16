@@ -412,6 +412,32 @@ body:before{
   .carousel-card{width:min(245px,70vw)!important}
 }
 
+
+/* ===== Admin controls fix: keep editing available with 3D carousel ===== */
+.carousel-admin-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin:0 0 10px;padding:10px 12px;border-radius:18px;
+  background:rgba(255,255,255,.82);border:1px solid rgba(199,74,139,.14);
+  box-shadow:0 10px 28px rgba(180,71,131,.08);
+  position:relative;z-index:80;
+}
+.carousel-admin-title{font-size:12px;font-weight:850;color:#8a5874;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.carousel-admin-actions{display:flex;gap:8px;flex-wrap:wrap}
+.carousel-admin-actions .btn{min-height:36px}
+.carousel-card .card-actions{
+  position:relative;z-index:100;pointer-events:auto;
+  margin-top:12px;padding-top:2px;
+}
+.carousel-card .card-actions .btn{pointer-events:auto}
+.carousel-viewport{isolation:isolate}
+.carousel-card{pointer-events:auto}
+.carousel-card[aria-hidden="true"]{pointer-events:auto}
+@media(max-width:670px){
+ .carousel-admin-bar{align-items:stretch;flex-direction:column}
+ .carousel-admin-actions{display:grid;grid-template-columns:1fr 1fr 1fr}
+ .carousel-admin-actions .btn{width:100%;padding:8px 6px}
+}
+
 </style>
 </head>
 <body>
@@ -632,14 +658,20 @@ function render(){
     return;
   }
 
-  // Keep the current position valid after filtering/deleting items.
-  if(state.carouselIndex >= data.length) state.carouselIndex = Math.max(0, data.length - 1);
-
+  if(state.carouselIndex>=data.length) state.carouselIndex=Math.max(0,data.length-1);
   const admin=isAdmin();
 
   const area=document.createElement("section");
   area.className="carousel-area";
   area.innerHTML=`
+    ${admin?`<div class="carousel-admin-bar">
+      <div class="carousel-admin-title" id="carouselAdminTitle">Admin tools • selected item</div>
+      <div class="carousel-admin-actions">
+        <button class="btn" type="button" id="adminEditCurrent">✏ Edit current</button>
+        <button class="btn danger" type="button" id="adminDeleteCurrent">🗑 Delete current</button>
+        <button class="btn primary" type="button" id="adminAddCurrent">＋ Add Item</button>
+      </div>
+    </div>`:""}
     <div class="carousel-viewport" id="carouselViewport" aria-label="Value List carousel">
       <div class="carousel-track" id="carouselTrack"></div>
       <div class="carousel-hud">
@@ -668,93 +700,84 @@ function render(){
         <div class="row"><span>Value</span><span class="value">${esc(item.value)}</span></div>
         <div class="row"><span>Demand</span><span class="value">${demandText(item.demand)}</span></div>
         <div class="row"><span>Status</span><span class="value status ${rarityClass(item.status)}">${esc(item.status)}</span></div>
-        ${admin?`<div class="card-actions"><button class="btn" data-edit="${item.id}">✏ Edit</button><button class="btn danger" data-delete="${item.id}">🗑 Delete</button></div>`:""}
+        ${admin?`<div class="card-actions"><button class="btn" type="button" data-edit="${item.id}">✏ Edit</button><button class="btn danger" type="button" data-delete="${item.id}">🗑 Delete</button></div>`:""}
       </div>`;
     track.appendChild(card);
 
     card.addEventListener("click",(event)=>{
-      // Buttons still use the main delegated handler below.
       if(event.target.closest("[data-edit]") || event.target.closest("[data-delete]")) return;
       const clicked=Number(card.dataset.carouselIndex);
       if(clicked!==state.carouselIndex){
         state.carouselIndex=clicked;
         updateCarouselVisuals(area,data);
+        updateAdminTitle();
       }
     });
   });
 
+  function updateAdminTitle(){
+    const title=area.querySelector("#carouselAdminTitle");
+    const current=data[state.carouselIndex];
+    if(title&&current) title.textContent=`Admin tools • ${current.name}`;
+  }
+
   const pos=area.querySelector("#carouselPosition");
-  pos.textContent=`${state.carouselIndex+1} / ${data.length}`;
+  if(pos) pos.textContent=`${state.carouselIndex+1} / ${data.length}`;
 
   area.querySelector("#carouselPrev").onclick=()=>{
     state.carouselIndex=(state.carouselIndex-1+data.length)%data.length;
-    updateCarouselVisuals(area,data);
+    updateCarouselVisuals(area,data); updateAdminTitle();
   };
   area.querySelector("#carouselNext").onclick=()=>{
     state.carouselIndex=(state.carouselIndex+1)%data.length;
-    updateCarouselVisuals(area,data);
+    updateCarouselVisuals(area,data); updateAdminTitle();
   };
 
   const dots=area.querySelector("#carouselDots");
-  // Show dots for smaller collections; for large lists use only the position counter.
   if(data.length<=24){
     data.forEach((_,i)=>{
       const dot=document.createElement("button");
       dot.className="carousel-dot"+(i===state.carouselIndex?" active":"");
       dot.type="button";
       dot.setAttribute("aria-label",`Go to item ${i+1}`);
-      dot.onclick=()=>{state.carouselIndex=i;updateCarouselVisuals(area,data)};
+      dot.onclick=()=>{state.carouselIndex=i;updateCarouselVisuals(area,data);updateAdminTitle()};
       dots.appendChild(dot);
     });
   }
 
   const viewport=area.querySelector("#carouselViewport");
-
-  viewport.addEventListener("pointerdown",(e)=>{
-    state.dragStartX=e.clientX;
-    state.dragCurrentX=e.clientX;
-    viewport.setPointerCapture?.(e.pointerId);
-  });
-  viewport.addEventListener("pointermove",(e)=>{
-    if(state.dragStartX!==null) state.dragCurrentX=e.clientX;
-  });
+  viewport.addEventListener("pointerdown",(e)=>{state.dragStartX=e.clientX;state.dragCurrentX=e.clientX;viewport.setPointerCapture?.(e.pointerId)});
+  viewport.addEventListener("pointermove",(e)=>{if(state.dragStartX!==null)state.dragCurrentX=e.clientX});
   viewport.addEventListener("pointerup",(e)=>{
     if(state.dragStartX===null)return;
     const dx=state.dragCurrentX-state.dragStartX;
-    if(Math.abs(dx)>35){
-      state.carouselIndex=(state.carouselIndex+(dx<0?1:-1)+data.length)%data.length;
-      updateCarouselVisuals(area,data);
-    }
+    if(Math.abs(dx)>35){state.carouselIndex=(state.carouselIndex+(dx<0?1:-1)+data.length)%data.length;updateCarouselVisuals(area,data);updateAdminTitle()}
     state.dragStartX=null;state.dragCurrentX=null;
   });
-  viewport.addEventListener("pointercancel",()=>{
-    state.dragStartX=null;state.dragCurrentX=null;
-  });
+  viewport.addEventListener("pointercancel",()=>{state.dragStartX=null;state.dragCurrentX=null});
   viewport.addEventListener("wheel",(e)=>{
-    e.preventDefault();
-    if(state.wheelLock)return;
-    state.wheelLock=true;
+    e.preventDefault();if(state.wheelLock)return;state.wheelLock=true;
     state.carouselIndex=(state.carouselIndex+(e.deltaY+e.deltaX>0?1:-1)+data.length)%data.length;
-    updateCarouselVisuals(area,data);
-    setTimeout(()=>state.wheelLock=false,260);
+    updateCarouselVisuals(area,data);updateAdminTitle();setTimeout(()=>state.wheelLock=false,260)
   },{passive:false});
 
   document.onkeydown=(e)=>{
-    // Avoid hijacking typing in inputs/modals.
     const tag=(document.activeElement?.tagName||"").toLowerCase();
     if(["input","textarea","select"].includes(tag))return;
-    if(e.key==="ArrowRight"){
-      state.carouselIndex=(state.carouselIndex+1)%data.length;
-      updateCarouselVisuals(area,data);
-    }
-    if(e.key==="ArrowLeft"){
-      state.carouselIndex=(state.carouselIndex-1+data.length)%data.length;
-      updateCarouselVisuals(area,data);
-    }
+    if(e.key==="ArrowRight"){state.carouselIndex=(state.carouselIndex+1)%data.length;updateCarouselVisuals(area,data);updateAdminTitle()}
+    if(e.key==="ArrowLeft"){state.carouselIndex=(state.carouselIndex-1+data.length)%data.length;updateCarouselVisuals(area,data);updateAdminTitle()}
   };
+
+  if(admin){
+    area.querySelector("#adminEditCurrent").onclick=()=>openItemModal(Number(data[state.carouselIndex].id));
+    area.querySelector("#adminDeleteCurrent").onclick=()=>deleteItem(Number(data[state.carouselIndex].id));
+    area.querySelector("#adminAddCurrent").onclick=()=>openItemModal();
+    updateAdminTitle();
+  }
 
   updateCarouselVisuals(area,data);
 }
+
 function openLogin(){document.getElementById("modalTitle").textContent="Admin Login";document.getElementById("modalDescription").textContent="Only an account listed in admin_users can edit the public list.";loginForm.classList.remove("hidden");itemForm.classList.add("hidden");modalBackdrop.classList.add("open");document.getElementById("loginEmail").focus()}
 function openItemModal(id=null){
   editingId=id;selectedImageFile=null;oldImagePath="";
