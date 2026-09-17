@@ -558,6 +558,37 @@ body:before{
   </section>
 </div>
 
+<div class="modal-backdrop" id="detailBackdrop">
+  <section class="modal detail-modal" role="dialog" aria-modal="true" aria-labelledby="detailName">
+    <div class="detail-head">
+      <div class="detail-image" id="detailImage"></div>
+      <div>
+        <h2 class="detail-name" id="detailName">Item</h2>
+        <div class="detail-rarity" id="detailRarity">Rarity</div>
+        <div class="detail-stats">
+          <div class="detail-stat"><span class="detail-stat-label">Value</span><span class="detail-stat-value" id="detailValue">-</span></div>
+          <div class="detail-stat"><span class="detail-stat-label">Demand</span><span class="detail-stat-value" id="detailDemand">-</span></div>
+          <div class="detail-stat"><span class="detail-stat-label">Status</span><span class="detail-stat-value" id="detailStatus">-</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-shell">
+      <div class="chart-title">
+        <strong>Value History</strong>
+        <span id="detailHistoryMeta">Loading…</span>
+      </div>
+      <div id="detailChart"></div>
+      <div class="history-list" id="detailHistoryList"></div>
+    </div>
+
+    <div class="detail-actions">
+      <button class="btn" type="button" id="detailEditBtn">✏ Edit</button>
+      <button class="btn" type="button" id="detailCloseBtn">Close</button>
+    </div>
+  </section>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ============================================================
@@ -1091,11 +1122,15 @@ list.addEventListener("click",e=>{
   if(del)deleteItem(Number(del.dataset.delete));
 });
 loginBtn.onclick=openLogin;
-detailCloseBtn.onclick=closeDetailModal;
-detailBackdrop.addEventListener("click",e=>{if(e.target===detailBackdrop)closeDetailModal()});
-detailEditBtn.onclick=()=>{
-  if(detailItemId!=null){closeDetailModal();openItemModal(detailItemId);}
-};logoutBtn.onclick=async()=>{await db.auth.signOut();currentUser=null;currentUserIsAdmin=false;showNotice("Logged out.","success");await refreshAuth()};
+if(detailCloseBtn && detailBackdrop){
+  detailCloseBtn.onclick=closeDetailModal;
+  detailBackdrop.addEventListener("click",e=>{if(e.target===detailBackdrop)closeDetailModal()});
+}
+if(detailEditBtn){
+  detailEditBtn.onclick=()=>{
+    if(detailItemId!=null){closeDetailModal();openItemModal(detailItemId);}
+  };
+}logoutBtn.onclick=async()=>{await db.auth.signOut();currentUser=null;currentUserIsAdmin=false;showNotice("Logged out.","success");await refreshAuth()};
 document.getElementById("cancelModal").onclick=closeModal;document.getElementById("cancelItem").onclick=closeModal;
 modalBackdrop.addEventListener("click",e=>{if(e.target===modalBackdrop)closeModal()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal();closeDetailModal()}});
@@ -1123,36 +1158,7 @@ async function boot(){
 boot();
 </script>
 
-<div class="modal-backdrop" id="detailBackdrop">
-  <section class="modal detail-modal" role="dialog" aria-modal="true" aria-labelledby="detailName">
-    <div class="detail-head">
-      <div class="detail-image" id="detailImage"></div>
-      <div>
-        <h2 class="detail-name" id="detailName">Item</h2>
-        <div class="detail-rarity" id="detailRarity">Rarity</div>
-        <div class="detail-stats">
-          <div class="detail-stat"><span class="detail-stat-label">Value</span><span class="detail-stat-value" id="detailValue">-</span></div>
-          <div class="detail-stat"><span class="detail-stat-label">Demand</span><span class="detail-stat-value" id="detailDemand">-</span></div>
-          <div class="detail-stat"><span class="detail-stat-label">Status</span><span class="detail-stat-value" id="detailStatus">-</span></div>
-        </div>
-      </div>
-    </div>
 
-    <div class="chart-shell">
-      <div class="chart-title">
-        <strong>Value History</strong>
-        <span id="detailHistoryMeta">Loading…</span>
-      </div>
-      <div id="detailChart"></div>
-      <div class="history-list" id="detailHistoryList"></div>
-    </div>
-
-    <div class="detail-actions">
-      <button class="btn" type="button" id="detailEditBtn">✏ Edit</button>
-      <button class="btn" type="button" id="detailCloseBtn">Close</button>
-    </div>
-  </section>
-</div>
 
 </body>
 </html>
