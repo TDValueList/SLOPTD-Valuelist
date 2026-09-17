@@ -438,6 +438,62 @@ body:before{
  .carousel-admin-actions .btn{width:100%;padding:8px 6px}
 }
 
+
+/* ===== Status extensions ===== */
+.status.rising{color:#22aa82!important;font-weight:850}
+.status.dropping{color:#de5d73!important;font-weight:850}
+
+/* ===== Item detail modal ===== */
+.detail-modal{width:min(760px,100%);max-height:92vh}
+.detail-head{display:grid;grid-template-columns:160px 1fr;gap:18px;align-items:center}
+.detail-image{
+  width:160px;aspect-ratio:1/1;border-radius:22px;overflow:hidden;
+  background:linear-gradient(145deg,#fff,#ffe8f4 58%,#f0e6ff);
+  border:1px solid rgba(205,80,143,.14);
+  display:grid;place-items:center;
+  box-shadow:inset 0 0 0 7px rgba(255,255,255,.44),0 12px 30px rgba(180,71,131,.10)
+}
+.detail-image img{width:100%;height:100%;object-fit:contain;display:block}
+.detail-image .detail-placeholder{color:#c38ba7;text-align:center;font-size:12px;font-weight:800}
+.detail-name{margin:0;color:#713653;font-size:clamp(24px,3vw,34px);font-weight:900;line-height:1.05}
+.detail-rarity{margin-top:6px;color:#d94399;font-weight:850}
+.detail-stats{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:13px
+}
+.detail-stat{
+  background:rgba(255,255,255,.72);border:1px solid rgba(199,74,139,.11);
+  border-radius:14px;padding:10px
+}
+.detail-stat-label{display:block;color:#a06e86;font-size:11px}
+.detail-stat-value{display:block;margin-top:3px;color:#66324f;font-size:17px;font-weight:900}
+.chart-shell{
+  margin-top:18px;padding:13px;border:1px solid rgba(199,74,139,.12);
+  border-radius:18px;background:rgba(255,255,255,.68)
+}
+.chart-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.chart-title strong{color:#713653;font-size:14px}
+.chart-title span{color:#a06e86;font-size:11px}
+.history-chart{width:100%;height:250px;display:block}
+.chart-grid{stroke:rgba(169,92,133,.13);stroke-width:1}
+.chart-axis{fill:#a47791;font-size:10px}
+.chart-line{fill:none;stroke:#ff5da8;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.chart-area{fill:url(#chartFill);opacity:.48}
+.chart-dot{fill:#fff;stroke:#ff5da8;stroke-width:3}
+.chart-empty{min-height:190px;display:grid;place-items:center;color:#a47791;font-size:12px;text-align:center}
+.history-list{margin-top:11px;display:grid;gap:6px;max-height:150px;overflow:auto}
+.history-row{display:flex;justify-content:space-between;gap:12px;padding:7px 9px;background:rgba(255,255,255,.56);border-radius:10px;font-size:11px}
+.history-date{color:#9d6c84}.history-value{font-weight:850;color:#68314f}
+.detail-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+@media(max-width:600px){
+  .detail-head{grid-template-columns:1fr;text-align:center}
+  .detail-image{width:145px;margin:0 auto}
+  .detail-stats{grid-template-columns:1fr 1fr 1fr}
+  .history-chart{height:205px}
+}
+@media(max-width:430px){
+  .detail-stats{grid-template-columns:1fr}
+}
+
 </style>
 </head>
 <body>
@@ -467,7 +523,7 @@ body:before{
   <div class="controls">
     <input class="control" id="search" type="search" placeholder="Search item name...">
     <select class="control" id="rarityFilter"><option value="">All Rarities</option></select>
-    <select class="control" id="statusFilter"><option value="">All Status</option><option>Fluctuating</option><option>Unstable</option><option>Stable</option></select>
+    <select class="control" id="statusFilter"><option value="">All Status</option><option>Rising</option><option>Dropping</option><option>Fluctuating</option><option>Unstable</option><option>Stable</option></select>
     <select class="control" id="sortSelect"><option value="default">Sort: Default</option><option value="value">Sort: Value</option><option value="demand">Sort: Demand</option><option value="name">Sort: Name</option></select>
     <button class="btn" id="clearFilters">Clear Filters</button>
   </div>
@@ -492,7 +548,7 @@ body:before{
         <div class="field"><label>Rarity</label><input id="rarityInput" required maxlength="40"></div>
         <div class="field"><label>Value</label><input id="valueInput" required maxlength="40"></div>
         <div class="field"><label>Demand (0–10)</label><input id="demandInput" required type="number" step="0.1" min="0" max="10"></div>
-        <div class="field"><label>Status</label><select id="statusInput"><option>Fluctuating</option><option>Unstable</option><option>Stable</option></select></div>
+        <div class="field"><label>Status</label><select id="statusInput"><option>Rising</option><option>Dropping</option><option>Fluctuating</option><option>Unstable</option><option>Stable</option></select></div>
         <div class="field full"><label>Image File</label><input id="imageInput" type="file" accept="image/*"></div>
         <div class="field full"><label style="display:flex;align-items:center;gap:8px"><input id="removeImageInput" type="checkbox" style="width:auto"> Remove current image</label></div>
       </div>
@@ -519,7 +575,7 @@ let editingId = null;
 let selectedImageFile = null;
 let oldImagePath = "";
 let currentUserIsAdmin = false;
-const state = { sort: "default", carouselIndex: 0, dragStartX: null, dragCurrentX: null, wheelLock: false };
+const state = { sort: "default", carouselIndex: 0, dragStartX: null, dragCurrentX: null, wheelLock: false, justDragged: false };
 
 const list = document.getElementById("list");
 const notice = document.getElementById("notice");
@@ -535,6 +591,19 @@ const itemForm = document.getElementById("itemForm");
 const imageInput = document.getElementById("imageInput");
 const imagePreview = document.getElementById("imagePreview");
 const removeImageInput = document.getElementById("removeImageInput");
+const detailBackdrop = document.getElementById("detailBackdrop");
+const detailImage = document.getElementById("detailImage");
+const detailName = document.getElementById("detailName");
+const detailRarity = document.getElementById("detailRarity");
+const detailValue = document.getElementById("detailValue");
+const detailDemand = document.getElementById("detailDemand");
+const detailStatus = document.getElementById("detailStatus");
+const detailChart = document.getElementById("detailChart");
+const detailHistoryMeta = document.getElementById("detailHistoryMeta");
+const detailHistoryList = document.getElementById("detailHistoryList");
+const detailEditBtn = document.getElementById("detailEditBtn");
+const detailCloseBtn = document.getElementById("detailCloseBtn");
+let detailItemId = null;
 
 function showNotice(text, type="") {
   notice.textContent = text;
@@ -549,6 +618,103 @@ function demandText(v){return `${Number(v).toFixed(Number(v)%1===0?0:1)}/10`}
 function isConfigured(){return SUPABASE_URL.startsWith("http") && !SUPABASE_URL.includes("YOUR_") && SUPABASE_PUBLISHABLE_KEY && !SUPABASE_PUBLISHABLE_KEY.includes("YOUR_")}
 function isAdmin(){return !!currentUser && currentUserIsAdmin}
 function storagePublicUrl(path){return path ? `${SUPABASE_URL}/storage/v1/object/public/value-images/${path}` : ""}
+
+function formatHistoryDate(v){
+  try{
+    return new Intl.DateTimeFormat(undefined,{year:"numeric",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}).format(new Date(v));
+  }catch(_){return String(v)}
+}
+function graphValue(v){
+  const n=Number(v);
+  return Number.isFinite(n)?n:0;
+}
+function renderHistoryChart(history){
+  if(!history.length){
+    detailChart.innerHTML='<div class="chart-empty">No value history yet.<br>Edit the item after the history feature is enabled to create points.</div>';
+    detailHistoryMeta.textContent="No history";
+    detailHistoryList.innerHTML="";
+    return;
+  }
+  const width=700,height=250,padL=45,padR=18,padT=16,padB=35;
+  const values=history.map(x=>graphValue(x.numeric_value));
+  const minRaw=Math.min(...values),maxRaw=Math.max(...values);
+  const pad=(maxRaw-minRaw)||Math.max(1,maxRaw*0.08);
+  const min=Math.max(0,minRaw-pad),max=maxRaw+pad;
+  const xFor=i=>padL+(history.length===1?(width-padL-padR)/2:i*(width-padL-padR)/(history.length-1));
+  const yFor=v=>height-padB-(v-min)/(max-min)*(height-padT-padB);
+
+  let grid="";
+  for(let i=0;i<5;i++){
+    const val=min+(max-min)*(i/4),y=yFor(val);
+    grid+=`<line x1="${padL}" y1="${y}" x2="${width-padR}" y2="${y}" class="chart-grid"></line>`;
+    grid+=`<text x="${padL-7}" y="${y+3}" text-anchor="end" class="chart-axis">${Math.round(val).toLocaleString()}</text>`;
+  }
+
+  const points=history.map((x,i)=>[xFor(i),yFor(graphValue(x.numeric_value))]);
+  const poly=points.map(p=>p.join(",")).join(" ");
+  const areaPath=history.length===1
+    ? `M ${points[0][0]} ${yFor(min)} L ${points[0][0]} ${points[0][1]} L ${points[0][0]} ${yFor(min)} Z`
+    : `M ${points[0][0]} ${height-padB} L ${poly.replaceAll(" ", " L ")} L ${points[points.length-1][0]} ${height-padB} Z`;
+  const dots=points.map((p,i)=>`<circle cx="${p[0]}" cy="${p[1]}" r="5" class="chart-dot"><title>${esc(history[i].display_value||history[i].numeric_value)} • ${esc(formatHistoryDate(history[i].recorded_at))}</title></circle>`).join("");
+
+  const first=history[0],last=history[history.length-1];
+  const change=graphValue(last.numeric_value)-graphValue(first.numeric_value);
+  const changeText=(change>0?"+":"")+Math.round(change).toLocaleString();
+  detailHistoryMeta.textContent=`${history.length} point${history.length===1?"":"s"} • ${changeText} since start`;
+
+  detailChart.innerHTML=`
+    <svg class="history-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Value history chart">
+      <defs><linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ff7bb8" stop-opacity=".30"/>
+        <stop offset="100%" stop-color="#ff7bb8" stop-opacity="0"/>
+      </linearGradient></defs>
+      ${grid}
+      <line x1="${padL}" y1="${height-padB}" x2="${width-padR}" y2="${height-padB}" class="chart-grid"></line>
+      <path d="${areaPath}" class="chart-area"></path>
+      ${history.length>1?`<polyline points="${poly}" class="chart-line"></polyline>`:""}
+      ${dots}
+      <text x="${padL}" y="${height-10}" class="chart-axis">${esc(formatHistoryDate(first.recorded_at))}</text>
+      <text x="${width-padR}" y="${height-10}" text-anchor="end" class="chart-axis">${esc(formatHistoryDate(last.recorded_at))}</text>
+    </svg>`;
+
+  detailHistoryList.innerHTML=[...history].reverse().slice(0,20).map(x=>
+    `<div class="history-row"><span class="history-date">${esc(formatHistoryDate(x.recorded_at))}</span><span class="history-value">${esc(x.display_value||String(x.numeric_value))}</span></div>`
+  ).join("");
+}
+async function openDetailModal(id){
+  const item=items.find(x=>Number(x.id)===Number(id));
+  if(!item)return;
+  detailItemId=item.id;
+  detailName.textContent=item.name;
+  detailRarity.textContent=item.rarity;
+  detailValue.textContent=item.value;
+  detailDemand.textContent=demandText(item.demand);
+  detailStatus.textContent=item.status;
+  detailStatus.className="detail-stat-value "+rarityClass(item.status);
+  const img=item.image_path?storagePublicUrl(item.image_path):"";
+  detailImage.innerHTML=img?`<img src="${esc(img)}" alt="${esc(item.name)}">`:`<div class="detail-placeholder">IMAGE<br>ADD LATER</div>`;
+  detailChart.innerHTML='<div class="chart-empty">Loading value history…</div>';
+  detailHistoryMeta.textContent="Loading…";
+  detailHistoryList.innerHTML="";
+  detailEditBtn.classList.toggle("hidden",!isAdmin());
+  detailBackdrop.classList.add("open");
+
+  const {data,error}=await db.from("value_history")
+    .select("numeric_value,display_value,recorded_at")
+    .eq("item_id",item.id)
+    .order("recorded_at",{ascending:true});
+  if(error){
+    console.error("history load failed",error);
+    detailChart.innerHTML='<div class="chart-empty">Value history is not available yet.<br>Run the one-time Supabase history migration SQL.</div>';
+    detailHistoryMeta.textContent="Setup required";
+    return;
+  }
+  renderHistoryChart(data||[]);
+}
+function closeDetailModal(){
+  detailBackdrop.classList.remove("open");
+  detailItemId=null;
+}
 
 async function checkAdmin(){
   if(!currentUser || !db){ currentUserIsAdmin=false; return false; }
@@ -737,12 +903,18 @@ function render(){
 
     card.addEventListener("click",(event)=>{
       if(event.target.closest("[data-edit]") || event.target.closest("[data-delete]")) return;
+      if(state.justDragged){ state.justDragged=false; return; }
+
       const clicked=Number(card.dataset.carouselIndex);
       if(clicked!==state.carouselIndex){
         state.carouselIndex=clicked;
         updateCarouselVisuals(area,data);
         updateAdminTitle();
+        return;
       }
+
+      // Tapping/clicking the centered item opens its details.
+      openDetailModal(Number(item.id));
     });
   });
 
@@ -799,6 +971,7 @@ function render(){
     const dx=state.dragCurrentX-state.dragStartX;
     if(Math.abs(dx)>35){
       state.carouselIndex=(state.carouselIndex+(dx<0?1:-1)+data.length)%data.length;
+      state.justDragged=true;
       updateCarouselVisuals(area,data);
       updateAdminTitle();
     }
@@ -917,10 +1090,15 @@ list.addEventListener("click",e=>{
   if(edit)openItemModal(Number(edit.dataset.edit));
   if(del)deleteItem(Number(del.dataset.delete));
 });
-loginBtn.onclick=openLogin;logoutBtn.onclick=async()=>{await db.auth.signOut();currentUser=null;currentUserIsAdmin=false;showNotice("Logged out.","success");await refreshAuth()};
+loginBtn.onclick=openLogin;
+detailCloseBtn.onclick=closeDetailModal;
+detailBackdrop.addEventListener("click",e=>{if(e.target===detailBackdrop)closeDetailModal()});
+detailEditBtn.onclick=()=>{
+  if(detailItemId!=null){closeDetailModal();openItemModal(detailItemId);}
+};logoutBtn.onclick=async()=>{await db.auth.signOut();currentUser=null;currentUserIsAdmin=false;showNotice("Logged out.","success");await refreshAuth()};
 document.getElementById("cancelModal").onclick=closeModal;document.getElementById("cancelItem").onclick=closeModal;
 modalBackdrop.addEventListener("click",e=>{if(e.target===modalBackdrop)closeModal()});
-document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal();closeDetailModal()}});
 loginForm.addEventListener("submit",e=>{e.preventDefault();login()});
 itemForm.addEventListener("submit",saveItem);
 imageInput.addEventListener("change",()=>{selectedImageFile=imageInput.files[0]||null;if(!selectedImageFile){imagePreview.innerHTML='<span style="color:#626975;font-size:12px">No image selected</span>';return}const r=new FileReader();r.onload=ev=>imagePreview.innerHTML=`<img src="${ev.target.result}" alt="">`;r.readAsDataURL(selectedImageFile)});
@@ -944,5 +1122,37 @@ async function boot(){
 }
 boot();
 </script>
+
+<div class="modal-backdrop" id="detailBackdrop">
+  <section class="modal detail-modal" role="dialog" aria-modal="true" aria-labelledby="detailName">
+    <div class="detail-head">
+      <div class="detail-image" id="detailImage"></div>
+      <div>
+        <h2 class="detail-name" id="detailName">Item</h2>
+        <div class="detail-rarity" id="detailRarity">Rarity</div>
+        <div class="detail-stats">
+          <div class="detail-stat"><span class="detail-stat-label">Value</span><span class="detail-stat-value" id="detailValue">-</span></div>
+          <div class="detail-stat"><span class="detail-stat-label">Demand</span><span class="detail-stat-value" id="detailDemand">-</span></div>
+          <div class="detail-stat"><span class="detail-stat-label">Status</span><span class="detail-stat-value" id="detailStatus">-</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-shell">
+      <div class="chart-title">
+        <strong>Value History</strong>
+        <span id="detailHistoryMeta">Loading…</span>
+      </div>
+      <div id="detailChart"></div>
+      <div class="history-list" id="detailHistoryList"></div>
+    </div>
+
+    <div class="detail-actions">
+      <button class="btn" type="button" id="detailEditBtn">✏ Edit</button>
+      <button class="btn" type="button" id="detailCloseBtn">Close</button>
+    </div>
+  </section>
+</div>
+
 </body>
 </html>
