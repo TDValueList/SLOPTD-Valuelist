@@ -494,6 +494,61 @@ body:before{
   .detail-stats{grid-template-columns:1fr}
 }
 
+
+/* ===== Normal / Shiny / Void variant controls ===== */
+.variant-switcher{
+  display:flex;
+  justify-content:flex-end;
+  gap:6px;
+  flex-wrap:wrap;
+  margin:5px 0 2px;
+  position:relative;
+  z-index:220;
+}
+.variant-btn{
+  border:1px solid rgba(199,74,139,.14);
+  background:rgba(255,255,255,.76);
+  color:#96617a;
+  border-radius:999px;
+  padding:5px 9px;
+  font-size:11px;
+  font-weight:850;
+  line-height:1;
+  cursor:pointer;
+  position:relative;
+  z-index:500;
+  pointer-events:auto;
+  touch-action:manipulation;
+}
+.variant-btn:hover{background:#fff;transform:translateY(-1px)}
+.variant-btn.active{
+  background:linear-gradient(135deg,#ff68b0,#ff4b9d);
+  border-color:#ff68b0;
+  color:#fff;
+  box-shadow:0 6px 14px rgba(216,70,139,.16);
+}
+.variant-btn[data-variant="Shiny"].active{
+  background:linear-gradient(135deg,#ffad52,#ffd56e);
+  border-color:#ffc56b;
+}
+.variant-btn[data-variant="Void"].active{
+  background:linear-gradient(135deg,#7453b8,#43326d);
+  border-color:#7657bb;
+}
+.carousel-card .variant-switcher{margin-left:auto}
+.variant-edit-note{
+  margin:3px 0 6px;
+  color:#a36d87;
+  font-size:11px;
+  font-weight:800;
+}
+.detail-variant-switcher{
+  justify-content:flex-start;
+  margin:10px 0 0;
+}
+.detail-variant-switcher .variant-btn{padding:6px 11px}
+.detail-history-note{color:#a06e86;font-size:10px;font-weight:750}
+
 </style>
 </head>
 <body>
@@ -524,7 +579,7 @@ body:before{
     <input class="control" id="search" type="search" placeholder="Search item name...">
     <select class="control" id="rarityFilter"><option value="">All Rarities</option></select>
     <select class="control" id="statusFilter"><option value="">All Status</option><option>Rising</option><option>Dropping</option><option>Fluctuating</option><option>Unstable</option><option>Stable</option></select>
-    <select class="control" id="sortSelect"><option value="default">Sort: Default</option><option value="value">Sort: Value</option><option value="demand">Sort: Demand</option><option value="name">Sort: Name</option></select>
+    <select class="control" id="sortSelect"><option value="value" selected>Sort: Value</option><option value="demand">Sort: Demand</option><option value="name">Sort: Name</option></select>
     <button class="btn" id="clearFilters">Clear Filters</button>
   </div>
 
@@ -565,6 +620,12 @@ body:before{
       <div>
         <h2 class="detail-name" id="detailName">Item</h2>
         <div class="detail-rarity" id="detailRarity">Rarity</div>
+        <div id="detailVariantMeta" class="variant-edit-note">Normal</div>
+        <div class="variant-switcher detail-variant-switcher" id="detailVariantSwitcher">
+          <button class="variant-btn active" type="button" data-variant="Normal">Normal</button>
+          <button class="variant-btn" type="button" data-variant="Shiny">Shiny</button>
+          <button class="variant-btn" type="button" data-variant="Void">Void</button>
+        </div>
         <div class="detail-stats">
           <div class="detail-stat"><span class="detail-stat-label">Value</span><span class="detail-stat-value" id="detailValue">-</span></div>
           <div class="detail-stat"><span class="detail-stat-label">Demand</span><span class="detail-stat-value" id="detailDemand">-</span></div>
@@ -575,7 +636,7 @@ body:before{
 
     <div class="chart-shell">
       <div class="chart-title">
-        <strong>Value History</strong>
+        <strong>Value History <span class="detail-history-note">• Normal only</span></strong>
         <span id="detailHistoryMeta">Loading…</span>
       </div>
       <div id="detailChart"></div>
@@ -635,6 +696,10 @@ const detailHistoryList = document.getElementById("detailHistoryList");
 const detailEditBtn = document.getElementById("detailEditBtn");
 const detailCloseBtn = document.getElementById("detailCloseBtn");
 let detailItemId = null;
+let detailVariantType = "Normal";
+let editingVariantType = "Normal";
+let variantByItem = new Map();
+const selectedVariantByItem = new Map();
 
 function showNotice(text, type="") {
   notice.textContent = text;
@@ -679,9 +744,42 @@ function isConfigured(){return SUPABASE_URL.startsWith("http") && !SUPABASE_URL.
 function isAdmin(){return !!currentUser && currentUserIsAdmin}
 function storagePublicUrl(path){return path ? `${SUPABASE_URL}/storage/v1/object/public/value-images/${path}` : ""}
 
+function normalizeVariantType(type){
+  return ["Normal","Shiny","Void"].includes(type) ? type : "Normal";
+}
+function getSelectedVariantType(itemId){
+  return normalizeVariantType(selectedVariantByItem.get(Number(itemId)) || "Normal");
+}
+function getVariantData(item,type){
+  const t=normalizeVariantType(type);
+  if(t==="Normal"){
+    return {type:t,value:item?.value??"",demand:Number(item?.demand??0)};
+  }
+  const rows=variantByItem.get(Number(item?.id));
+  const row=rows?.get(t);
+  if(row){
+    return {type:t,value:row.value??"",demand:Number(row.demand??0)};
+  }
+  return {type:t,value:item?.value??"",demand:Number(item?.demand??0)};
+}
+function setVariantForItem(itemId,type){
+  selectedVariantByItem.set(Number(itemId),normalizeVariantType(type));
+}
+function buildVariantButtons(itemId,currentType){
+  const types=["Normal","Shiny","Void"];
+  return `<div class="variant-switcher" data-variant-item="${Number(itemId)}">`+
+    types.map(type=>`<button class="variant-btn ${type===currentType?"active":""}" type="button" data-variant="${type}" data-variant-item="${Number(itemId)}">${type}</button>`).join("")+
+    `</div>`;
+}
+
 function formatHistoryDate(v){
   try{
-    return new Intl.DateTimeFormat(undefined,{year:"numeric",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}).format(new Date(v));
+    const locale=(navigator.languages&&navigator.languages.length?navigator.languages[0]:navigator.language)||"en-US";
+    return new Intl.DateTimeFormat(locale,{
+      year:"numeric",month:"short",day:"numeric",
+      hour:"2-digit",minute:"2-digit",
+      timeZoneName:"short"
+    }).format(new Date(v));
   }catch(_){return String(v)}
 }
 function graphValue(v){
@@ -741,14 +839,32 @@ function renderHistoryChart(history){
     `<div class="history-row"><span class="history-date">${esc(formatHistoryDate(x.recorded_at))}</span><span class="history-value">${esc(x.display_value||String(x.numeric_value))}</span></div>`
   ).join("");
 }
+function updateDetailVariant(type){
+  if(detailItemId==null)return;
+  const item=items.find(x=>Number(x.id)===Number(detailItemId));
+  if(!item)return;
+  detailVariantType=normalizeVariantType(type);
+  setVariantForItem(item.id,detailVariantType);
+  const variant=getVariantData(item,detailVariantType);
+  detailValue.textContent=variant.value;
+  detailDemand.textContent=demandText(variant.demand);
+  document.querySelectorAll("#detailVariantSwitcher .variant-btn").forEach(btn=>{
+    btn.classList.toggle("active",btn.dataset.variant===detailVariantType);
+  });
+  const meta=document.getElementById("detailVariantMeta");
+  if(meta)meta.textContent=detailVariantType;
+}
+
 async function openDetailModal(id){
   const item=items.find(x=>Number(x.id)===Number(id));
   if(!item)return;
   detailItemId=item.id;
+  detailVariantType=getSelectedVariantType(item.id);
   detailName.textContent=item.name;
   detailRarity.textContent=item.rarity;
-  detailValue.textContent=item.value;
-  detailDemand.textContent=demandText(item.demand);
+  const variant=getVariantData(item,detailVariantType);
+  detailValue.textContent=variant.value;
+  detailDemand.textContent=demandText(variant.demand);
   detailStatus.textContent=item.status;
   detailStatus.className="detail-stat-value "+rarityClass(item.status);
   const img=item.image_path?storagePublicUrl(item.image_path):"";
@@ -810,6 +926,24 @@ async function loadItems(){
   const {data,error}=await db.from("value_items").select("*").order("sort_order",{ascending:true}).order("created_at",{ascending:true});
   if(error){showNotice("Could not load the value list: "+error.message,"error");return}
   items=data||[];
+
+  variantByItem=new Map();
+  if(items.length){
+    const ids=items.map(x=>x.id);
+    const {data:variantRows,error:variantError}=await db
+      .from("value_item_variants")
+      .select("id,item_id,variant_type,value,demand")
+      .in("item_id",ids);
+    if(!variantError){
+      (variantRows||[]).forEach(row=>{
+        const itemId=Number(row.item_id);
+        if(!variantByItem.has(itemId))variantByItem.set(itemId,new Map());
+        variantByItem.get(itemId).set(normalizeVariantType(row.variant_type),row);
+      });
+    }else{
+      console.warn("value_item_variants could not be loaded yet:",variantError.message);
+    }
+  }
   render();
 }
 function updateRarityOptions(){
@@ -918,17 +1052,34 @@ function render(){
     card.className="card carousel-card";
     card.dataset.carouselIndex=index;
     const image=item.image_path?storagePublicUrl(item.image_path):"";
+    const selectedType=getSelectedVariantType(item.id);
+    const variant=getVariantData(item,selectedType);
     card.innerHTML=`
       <div class="card-inner">
         <h2 class="name" title="${esc(item.name)}">${esc(item.name)}</h2>
         <div class="rarity ${rarityClass(item.rarity)}">${esc(item.rarity)}</div>
         <div class="image-box">${image?`<img src="${esc(image)}" alt="${esc(item.name)}" loading="lazy">`:`<div class="image-placeholder">IMAGE<br>ADD LATER</div>`}</div>
-        <div class="row"><span>Value</span><span class="value">${esc(item.value)}</span></div>
-        <div class="row"><span>Demand</span><span class="value">${demandText(item.demand)}</span></div>
+        <div class="row"><span>Value</span><span class="value">${esc(variant.value)}</span></div>
+        ${buildVariantButtons(item.id,selectedType)}
+        <div class="row"><span>Demand</span><span class="value">${demandText(variant.demand)}</span></div>
         <div class="row"><span>Status</span><span class="value status ${rarityClass(item.status)}">${esc(item.status)}</span></div>
         ${admin?`<div class="card-actions"><button class="btn" type="button" data-edit="${item.id}">✏ Edit</button><button class="btn danger" type="button" data-delete="${item.id}">🗑 Delete</button></div>`:""}
       </div>`;
     track.appendChild(card);
+
+    card.querySelectorAll("[data-variant]").forEach(button=>{
+      button.addEventListener("pointerdown",event=>{
+        event.stopPropagation();
+        state.dragStartX=null;
+        state.dragCurrentX=null;
+      });
+      button.addEventListener("click",event=>{
+        event.preventDefault();
+        event.stopPropagation();
+        setVariantForItem(item.id,button.dataset.variant);
+        render();
+      });
+    });
 
     if(admin){
       const editButton=card.querySelector("[data-edit]");
@@ -1069,14 +1220,21 @@ function render(){
 function openLogin(){document.getElementById("modalTitle").textContent="Admin Login";document.getElementById("modalDescription").textContent="Only an account listed in admin_users can edit the public list.";loginForm.classList.remove("hidden");itemForm.classList.add("hidden");modalBackdrop.classList.add("open");document.getElementById("loginEmail").focus()}
 function openItemModal(id=null){
   editingId=id;selectedImageFile=null;oldImagePath="";
+  editingVariantType=id===null?"Normal":getSelectedVariantType(id);
   itemForm.reset();removeImageInput.checked=false;imagePreview.innerHTML='<span style="color:#626975;font-size:12px">No image selected</span>';
-  document.getElementById("modalTitle").textContent=id===null?"Add Item":"Edit Item";
-  document.getElementById("modalDescription").textContent="Changes are saved to the shared database and are visible to every visitor.";
+  document.getElementById("modalTitle").textContent=id===null?"Add Item":`Edit Item • ${editingVariantType}`;
+  document.getElementById("modalDescription").textContent=id===null
+    ?"Add a new character. Normal, Shiny and Void will be created together."
+    :`Editing ${editingVariantType}. Name, Rarity, Status and image are shared; Value and Demand belong to ${editingVariantType}.`;
   loginForm.classList.add("hidden");itemForm.classList.remove("hidden");
   if(id!==null){
     const x=items.find(a=>a.id===id);if(!x)return;
-    document.getElementById("nameInput").value=x.name;document.getElementById("rarityInput").value=x.rarity;
-    document.getElementById("valueInput").value=x.value;document.getElementById("demandInput").value=x.demand;document.getElementById("statusInput").value=x.status;
+    const variant=getVariantData(x,editingVariantType);
+    document.getElementById("nameInput").value=x.name;
+    document.getElementById("rarityInput").value=x.rarity;
+    document.getElementById("valueInput").value=variant.value;
+    document.getElementById("demandInput").value=variant.demand;
+    document.getElementById("statusInput").value=x.status;
     oldImagePath=x.image_path||"";
     if(oldImagePath)imagePreview.innerHTML=`<img src="${esc(storagePublicUrl(oldImagePath))}" alt="">`;
   }
@@ -1113,24 +1271,71 @@ async function saveItem(e){
     status:document.getElementById("statusInput").value
   };
   if(!payload.name||!payload.rarity||!payload.value||Number.isNaN(payload.demand))return;
+
   try{
     if(editingId===null){
       const {data,error}=await db.from("value_items").insert(payload).select("id").single();
       if(error)throw error;
+
       if(selectedImageFile){
         const path=await uploadImage(selectedImageFile,data.id);
-        const {error:e2}=await db.from("value_items").update({image_path:path}).eq("id",data.id);if(e2)throw e2;
+        const {error:e2}=await db.from("value_items").update({image_path:path}).eq("id",data.id);
+        if(e2)throw e2;
       }
+
+      const {error:variantError}=await db.from("value_item_variants").upsert(
+        [
+          {item_id:data.id,variant_type:"Normal",value:payload.value,demand:payload.demand},
+          {item_id:data.id,variant_type:"Shiny",value:payload.value,demand:payload.demand},
+          {item_id:data.id,variant_type:"Void",value:payload.value,demand:payload.demand}
+        ],
+        {onConflict:"item_id,variant_type"}
+      );
+      if(variantError)throw variantError;
     }else{
+      const commonPayload={
+        name:payload.name,
+        rarity:payload.rarity,
+        status:payload.status
+      };
+
       if(selectedImageFile){
-        payload.image_path=await uploadImage(selectedImageFile,editingId);
+        commonPayload.image_path=await uploadImage(selectedImageFile,editingId);
       }else if(removeImageInput.checked){
-        payload.image_path=null;
+        commonPayload.image_path=null;
       }
-      const {error}=await db.from("value_items").update(payload).eq("id",editingId);if(error)throw error;
+
+      const {error:commonError}=await db.from("value_items").update(commonPayload).eq("id",editingId);
+      if(commonError)throw commonError;
+
+      if(editingVariantType==="Normal"){
+        // Normal Value is kept in value_items so the existing history trigger records it.
+        const {error:valueError}=await db.from("value_items").update({
+          value:payload.value,
+          demand:payload.demand
+        }).eq("id",editingId);
+        if(valueError)throw valueError;
+      }
+
+      const {error:variantError}=await db.from("value_item_variants").upsert(
+        {
+          item_id:editingId,
+          variant_type:editingVariantType,
+          value:payload.value,
+          demand:payload.demand
+        },
+        {onConflict:"item_id,variant_type"}
+      );
+      if(variantError)throw variantError;
     }
-    closeModal();await loadItems();showNotice("Saved to the shared database.","success");
-  }catch(err){showNotice("Save failed: "+err.message,"error")}
+
+    closeModal();
+    await loadItems();
+    showNotice(`Saved ${editingVariantType} data to the shared database.`,"success");
+  }catch(err){
+    console.error(err);
+    showNotice("Save failed: "+err.message,"error")
+  }
 }
 async function deleteItem(id){
   if(!(await checkAdmin())){showNotice("Admin permission is required.","error");return}
@@ -1153,11 +1358,22 @@ list.addEventListener("click",e=>{
 loginBtn.onclick=openLogin;
 if(detailCloseBtn && detailBackdrop){
   detailCloseBtn.onclick=closeDetailModal;
+document.querySelectorAll("#detailVariantSwitcher .variant-btn").forEach(button=>{
+  button.addEventListener("click",event=>{
+    event.preventDefault();
+    event.stopPropagation();
+    updateDetailVariant(button.dataset.variant);
+  });
+});
   detailBackdrop.addEventListener("click",e=>{if(e.target===detailBackdrop)closeDetailModal()});
 }
 if(detailEditBtn){
   detailEditBtn.onclick=()=>{
-    if(detailItemId!=null){closeDetailModal();openItemModal(detailItemId);}
+    if(detailItemId!=null){
+      setVariantForItem(detailItemId,detailVariantType);
+      closeDetailModal();
+      openItemModal(detailItemId);
+    }
   };
 }logoutBtn.onclick=async()=>{await db.auth.signOut();currentUser=null;currentUserIsAdmin=false;showNotice("Logged out.","success");await refreshAuth()};
 document.getElementById("cancelModal").onclick=closeModal;document.getElementById("cancelItem").onclick=closeModal;
@@ -1167,10 +1383,10 @@ loginForm.addEventListener("submit",e=>{e.preventDefault();login()});
 itemForm.addEventListener("submit",saveItem);
 imageInput.addEventListener("change",()=>{selectedImageFile=imageInput.files[0]||null;if(!selectedImageFile){imagePreview.innerHTML='<span style="color:#626975;font-size:12px">No image selected</span>';return}const r=new FileReader();r.onload=ev=>imagePreview.innerHTML=`<img src="${ev.target.result}" alt="">`;r.readAsDataURL(selectedImageFile)});
 ["search","rarityFilter","statusFilter","sortSelect"].forEach(id=>document.getElementById(id).addEventListener(id==="search"?"input":"change",render));
-document.getElementById("clearFilters").onclick=()=>{document.getElementById("search").value="";document.getElementById("rarityFilter").value="";document.getElementById("statusFilter").value="";document.getElementById("sortSelect").value="default";render()};
+document.getElementById("clearFilters").onclick=()=>{document.getElementById("search").value="";document.getElementById("rarityFilter").value="";document.getElementById("statusFilter").value="";document.getElementById("sortSelect").value="value";render()};
 document.getElementById("sortValue").onclick=()=>{document.getElementById("sortSelect").value="value";render()};
 document.getElementById("sortDemand").onclick=()=>{document.getElementById("sortSelect").value="demand";render()};
-document.getElementById("reset").onclick=()=>{document.getElementById("search").value="";document.getElementById("rarityFilter").value="";document.getElementById("statusFilter").value="";document.getElementById("sortSelect").value="default";render()};
+document.getElementById("reset").onclick=()=>{document.getElementById("search").value="";document.getElementById("rarityFilter").value="";document.getElementById("statusFilter").value="";document.getElementById("sortSelect").value="value";render()};
 addTop.onclick=()=>openItemModal();
 refreshTop.onclick=async()=>{hideNotice();await loadItems();showNotice("Value List refreshed from Supabase.","success")};
 
